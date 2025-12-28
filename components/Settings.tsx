@@ -1,22 +1,20 @@
-import i18n from '@/constants/localization';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useI18n } from '@/constants/i18nContext';
 import React, { useState } from 'react';
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 export default function SettingsScreen({ onLanguageChange }: { onLanguageChange?: () => void }) {
-  // @ts-ignore
-  const [currentLanguage, setCurrentLanguage] = useState<'en' | 'pt'>(i18n.locale || 'en');
+  const { language, setLanguage, t } = useI18n();
+  const [currentLanguage, setCurrentLanguage] = useState<'en' | 'pt' | 'es'>(language);
 
-  const handleLanguageChange = async (language: 'en' | 'pt') => {
-    i18n.setLocale(language);
-    setCurrentLanguage(language);
-    await AsyncStorage.setItem('app-language', language);
+  const handleLanguageChange = async (lang: 'en' | 'pt' | 'es') => {
+    await setLanguage(lang);
+    setCurrentLanguage(lang);
     onLanguageChange?.();
   };
 
@@ -24,16 +22,14 @@ export default function SettingsScreen({ onLanguageChange }: { onLanguageChange?
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>
-          {/* @ts-ignore */}
-          {i18n.t('settings')}
+          {t('settings')}
         </Text>
       </View>
 
       {/* Language Settings */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>
-          {/* @ts-ignore */}
-          {i18n.t('language')}
+          {t('language')}
         </Text>
 
         <TouchableOpacity
@@ -70,6 +66,24 @@ export default function SettingsScreen({ onLanguageChange }: { onLanguageChange?
             Português
           </Text>
           {currentLanguage === 'pt' && <Text style={styles.checkmark}>✓</Text>}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.languageOption,
+            currentLanguage === 'es' && styles.languageOptionActive,
+          ]}
+          onPress={() => handleLanguageChange('es')}
+        >
+          <Text
+            style={[
+              styles.languageOptionText,
+              currentLanguage === 'es' && styles.languageOptionTextActive,
+            ]}
+          >
+            Español
+          </Text>
+          {currentLanguage === 'es' && <Text style={styles.checkmark}>✓</Text>}
         </TouchableOpacity>
       </View>
 

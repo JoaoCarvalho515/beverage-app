@@ -1,7 +1,8 @@
-import i18n from '@/constants/localization';
+import { useI18n } from '@/constants/i18nContext';
 import { storageService } from '@/constants/storage';
 import { useFocusEffect } from '@react-navigation/native';
 import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
 import React, { useState } from 'react';
 import {
     Alert,
@@ -15,6 +16,7 @@ import {
 type Period = 'day' | 'week' | 'month' | 'year';
 
 export default function StatisticsScreen() {
+  const { t } = useI18n();
   const [period, setPeriod] = useState<Period>('day');
   const [stats, setStats] = useState<{ [key: string]: number }>({});
   const [monthOffset, setMonthOffset] = useState(0);
@@ -34,12 +36,43 @@ export default function StatisticsScreen() {
     setRefreshing(false);
   };
 
+  const getVolumeForBeverage = (beverageName: string): number => {
+    // Standard serving sizes in liters
+    const volumeMap: { [key: string]: number } = {
+      '20cl': 0.2,
+      '33cl': 0.33,
+      'pint': 0.568,
+      'red': 0.15,
+      'white': 0.15,
+      'rosé': 0.15,
+      'shot': 0.04,
+      'guinness': 0.568,
+      'beer': 0.33, // Default beer size if no variant specified
+      'wine': 0.15, // Default wine size
+      'cidra': 0.75, // Cidra is 75cl
+      'cocktail': 0.25, // Default cocktail size
+      'shots': 0.04, // Default shots size
+    };
+
+    const lowerBeverage = beverageName.toLowerCase();
+    
+    // Try to find a matching volume
+    for (const [key, volume] of Object.entries(volumeMap)) {
+      if (lowerBeverage.includes(key)) {
+        return volume;
+      }
+    }
+    
+    // Default for custom beverages: 33cl (0.33L)
+    return 0.33;
+  };
+
   const generateCSV = async () => {
     try {
       const logs = await storageService.getLogs();
       
-      // CSV header
-      let csv = 'Beverage,Date,Time,Timestamp\n';
+      // CSV header with Liters column
+      let csv = 'Beverage,Date,Time,Liters,Timestamp\n';
       
       // Add each log as a row
       logs.forEach((log) => {
@@ -51,55 +84,40 @@ export default function StatisticsScreen() {
           hour12: true,
         });
         
+        // Get volume for this beverage
+        const volume = getVolumeForBeverage(log.beverage);
+        
         // Escape beverage name in case it contains commas or quotes
         const beverage = `"${log.beverage.replace(/"/g, '""')}"`;
         
-        csv += `${beverage},${dateStr},${timeStr},${log.timestamp}\n`;
+        csv += `${beverage},${dateStr},${timeStr},${volume},${log.timestamp}\n`;
       });
       
       const filename = `beverage_tracker_${new Date().toISOString().split('T')[0]}.csv`;
+      const filepath = FileSystem.documentDirectory + filename;
       
-      console.log('📁 Document Directory:', FileSystem.documentDirectory);
-      console.log('📄 Filename:', filename);
-      console.log('📊 CSV Content length:', csv.length);
+      // Write CSV to temp location
+      await FileSystem.writeAsStringAsync(filepath, csv);
+      console.log('✅ CSV created at:', filepath);
       
-      // Save to app documents directory
-      try {
-        const docDir = FileSystem.documentDirectory;
-        if (!docDir) {
-          throw new Error('Document directory is undefined');
-        }
-        
-        const filepath = docDir + filename;
-        console.log('💾 Attempting to write to:', filepath);
-        
-        await FileSystem.writeAsStringAsync(filepath, csv);
-        console.log('✅ File written successfully');
-        
-        // Verify file exists
-        const fileInfo = await FileSystem.getInfoAsync(filepath);
-        console.log('🔍 File info:', fileInfo);
-        
-        if (fileInfo.exists) {
-          Alert.alert(
-            '✅ CSV Saved Successfully',
-            `File saved as:\n${filename}\n\nSize: ${fileInfo.size} bytes`,
-            [{ text: 'OK' }]
-          );
-        } else {
-          throw new Error('File was written but cannot be verified');
-        }
-      } catch (error) {
-        console.error('❌ Error saving file:', error);
+      // Use Sharing to let user save it
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(filepath, {
+          mimeType: 'text/csv',
+          dialogTitle: `${t('csvSaved')} - ${filename}`,
+          UTI: 'public.comma-separated-values-text',
+        });
+        console.log('✅ CSV shared successfully');
+      } else {
         Alert.alert(
-          '❌ Error',
-          `Failed to save CSV:\n${error.message}`,
+          t('csvSaved'),
+          `${t('fileSavedAs')} ${filename}\n\n${t('shareTo')}`,
           [{ text: 'OK' }]
         );
       }
     } catch (error) {
       console.error('Error exporting CSV:', error);
-      Alert.alert('❌ Error', 'Failed to export CSV file');
+      Alert.alert(t('csvError'), t('exportFailed'));
     }
   };
 
@@ -126,7 +144,7 @@ export default function StatisticsScreen() {
       'guinness': 0.568,
       'beer': 0.33, // Default beer size if no variant specified
       'wine': 0.15, // Default wine size
-      'sidra': 0.33, // Default sidra size
+      'cidra': 0.75, // Cidra is 75cl
       'cocktail': 0.25, // Default cocktail size
     };
 
@@ -159,17 +177,13 @@ export default function StatisticsScreen() {
     
     switch (period) {
       case 'day':
-        // @ts-ignore
-        return i18n.t('today');
+        return t('today');
       case 'week':
-        // @ts-ignore
-        return i18n.t('thisWeek');
+        return t('thisWeek');
       case 'month':
-        // @ts-ignore
-        return i18n.t('thisMonth');
+        return t('thisMonth');
       case 'year':
-        // @ts-ignore
-        return i18n.t('thisYear');
+        return t('thisYear');
     }
   };
 
@@ -182,8 +196,7 @@ export default function StatisticsScreen() {
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>
-          {/* @ts-ignore */}
-          {i18n.t('statistics')}
+          {t('statistics')}
         </Text>
         <TouchableOpacity style={styles.csvButton} onPress={generateCSV}>
           <Text style={styles.csvButtonText}>CSV</Text>
@@ -208,16 +221,12 @@ export default function StatisticsScreen() {
               ]}
             >
               {p === 'day'
-                ? // @ts-ignore
-                  i18n.t('today')
+                ? t('today')
                 : p === 'week'
-                  ? // @ts-ignore
-                    i18n.t('thisWeek')
+                  ? t('thisWeek')
                   : p === 'month'
-                    ? // @ts-ignore
-                      i18n.t('thisMonth')
-                    : // @ts-ignore
-                      i18n.t('thisYear')}
+                    ? t('thisMonth')
+                    : t('thisYear')}
             </Text>
           </TouchableOpacity>
         ))}
@@ -230,14 +239,18 @@ export default function StatisticsScreen() {
             style={styles.monthButton}
             onPress={() => setMonthOffset(monthOffset - 1)}
           >
-            <Text style={styles.monthButtonText}>← Previous</Text>
+            <Text style={styles.monthButtonText}>
+              {t('previous')}
+            </Text>
           </TouchableOpacity>
           <Text style={styles.monthLabel}>{getPeriodLabel()}</Text>
           <TouchableOpacity
             style={styles.monthButton}
             onPress={() => setMonthOffset(monthOffset + 1)}
           >
-            <Text style={styles.monthButtonText}>Next →</Text>
+            <Text style={styles.monthButtonText}>
+              {t('next')}
+            </Text>
           </TouchableOpacity>
         </View>
       )}
@@ -246,20 +259,20 @@ export default function StatisticsScreen() {
       <View style={styles.summaryContainer}>
         <View style={styles.summaryCard}>
           <Text style={styles.summaryLabel}>
-            {/* @ts-ignore */}
-            {i18n.t('total')}
+            {t('total')}
           </Text>
           <Text style={styles.summaryValue}>{getTotalCount()}</Text>
         </View>
         <View style={styles.summaryCard}>
           <Text style={styles.summaryLabel}>
-            {/* @ts-ignore */}
-            {i18n.t('average')}
+            {t('average')}
           </Text>
           <Text style={styles.summaryValue}>{getAverageCount()}</Text>
         </View>
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryLabel}>Liters</Text>
+          <Text style={styles.summaryLabel}>
+            {t('liters')}
+          </Text>
           <Text style={styles.summaryValue}>{getLitersConsumed()}L</Text>
         </View>
       </View>
@@ -267,7 +280,9 @@ export default function StatisticsScreen() {
       {/* Bar Chart */}
       {Object.keys(stats).length > 0 && (
         <View style={styles.chartContainer}>
-          <Text style={styles.chartTitle}>Distribution</Text>
+          <Text style={styles.chartTitle}>
+            {t('distribution')}
+          </Text>
           <View style={styles.barChart}>
             {Object.entries(stats)
               .sort((a, b) => b[1] - a[1])
@@ -321,8 +336,7 @@ export default function StatisticsScreen() {
             ))
         ) : (
           <Text style={styles.noData}>
-            {/* @ts-ignore */}
-            {i18n.t('noData')}
+            {t('noData')}
           </Text>
         )}
       </View>

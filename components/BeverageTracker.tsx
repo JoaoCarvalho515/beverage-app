@@ -1,4 +1,4 @@
-import i18n from '@/constants/localization';
+import { useI18n } from '@/constants/i18nContext';
 import { Beverage, BeverageLog, storageService } from '@/constants/storage';
 import React, { useEffect, useState } from 'react';
 import {
@@ -31,6 +31,7 @@ const getImageSource = (imageName?: string) => {
 };
 
 export default function BeverageTrackerScreen() {
+  const { t } = useI18n();
   const [beverages, setBeverages] = useState<Beverage[]>([]);
   const [newBeverageName, setNewBeverageName] = useState('');
   const [logs, setLogs] = useState<BeverageLog[]>([]);
@@ -131,7 +132,7 @@ export default function BeverageTrackerScreen() {
     console.log('handleRemoveBeverage called with id:', id);
     if (isDefaultBeverage(id)) {
       console.log('Cannot remove default beverage');
-      alert('Cannot Delete: Default beverages cannot be removed.');
+      alert(t('cannotDelete'));
       return;
     }
 
@@ -182,14 +183,15 @@ export default function BeverageTrackerScreen() {
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>
-          {/* @ts-ignore */}
-          {i18n.t('title')}
+          {t('title')}
         </Text>
       </View>
 
       {/* Date/Time Picker */}
       <View style={styles.datePickerContainer}>
-        <Text style={styles.datePickerLabel}>Selected Date & Time:</Text>
+        <Text style={styles.datePickerLabel}>
+          {t('selectDate')}
+        </Text>
         <TouchableOpacity
           style={styles.datePickerButton}
           onPress={() => setShowDatePicker(!showDatePicker)}
@@ -208,7 +210,9 @@ export default function BeverageTrackerScreen() {
         </TouchableOpacity>
         {showDatePicker && (
           <View style={styles.dateInputContainer}>
-            <Text style={styles.dateInputLabel}>Enter Date (YYYY-MM-DD HH:MM):</Text>
+            <Text style={styles.dateInputLabel}>
+              {t('enterDateFormat')}
+            </Text>
             <TextInput
               style={styles.dateInput}
               placeholder="2025-12-27 14:30"
@@ -230,7 +234,9 @@ export default function BeverageTrackerScreen() {
                 setSelectedDate(new Date());
               }}
             >
-              <Text style={styles.dateResetButtonText}>Reset to Now</Text>
+              <Text style={styles.dateResetButtonText}>
+                {t('resetToNow')}
+              </Text>
             </TouchableOpacity>
           </View>
         )}
@@ -239,8 +245,7 @@ export default function BeverageTrackerScreen() {
       {/* Beverage Buttons */}
       <View style={styles.beveragesContainer}>
         <Text style={styles.sectionTitle}>
-          {/* @ts-ignore */}
-          {i18n.t('beverages')}
+          {t('beverages')}
         </Text>
         <View style={styles.beverageGrid}>
           {beverages.map((beverage) => {
@@ -292,18 +297,14 @@ export default function BeverageTrackerScreen() {
           onPress={() => setShowAddBeverage(true)}
         >
           <Text style={styles.addButtonText}>
-            + {/* @ts-ignore */}
-            {i18n.t('addBeverage')}
+            + {t('addBeverage')}
           </Text>
         </TouchableOpacity>
       ) : (
         <View style={styles.addBeverageForm}>
           <TextInput
             style={styles.input}
-            placeholder={
-              // @ts-ignore
-              i18n.t('addBeverage')
-            }
+            placeholder={t('addBeverage')}
             value={newBeverageName}
             onChangeText={setNewBeverageName}
           />
@@ -313,8 +314,7 @@ export default function BeverageTrackerScreen() {
               onPress={handleAddBeverage}
             >
               <Text style={styles.formButtonText}>
-                {/* @ts-ignore */}
-                {i18n.t('add')}
+                {t('add')}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -324,7 +324,9 @@ export default function BeverageTrackerScreen() {
                 setNewBeverageName('');
               }}
             >
-              <Text style={styles.formButtonText}>Cancel</Text>
+              <Text style={styles.formButtonText}>
+                {t('cancel')}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -333,8 +335,7 @@ export default function BeverageTrackerScreen() {
       {/* Today's Statistics */}
       <View style={styles.statsContainer}>
         <Text style={styles.sectionTitle}>
-          {/* @ts-ignore */}
-          {i18n.t('today')}
+          {t('today')}
         </Text>
         {Object.keys(stats).length > 0 ? (
           Object.entries(stats).map(([beverage, count]) => (
@@ -351,8 +352,7 @@ export default function BeverageTrackerScreen() {
           ))
         ) : (
           <Text style={styles.noData}>
-            {/* @ts-ignore */}
-            {i18n.t('noData')}
+            {t('noData')}
           </Text>
         )}
       </View>
@@ -360,8 +360,7 @@ export default function BeverageTrackerScreen() {
       {/* Recent Logs */}
       <View style={styles.logsContainer}>
         <Text style={styles.sectionTitle}>
-          {/* @ts-ignore */}
-          {i18n.t('logs')}
+          {t('logs')}
         </Text>
         {logs.length > 0 ? (
           <FlatList
@@ -383,8 +382,7 @@ export default function BeverageTrackerScreen() {
           />
         ) : (
           <Text style={styles.noData}>
-            {/* @ts-ignore */}
-            {i18n.t('noData')}
+            {t('noData')}
           </Text>
         )}
       </View>
@@ -394,7 +392,7 @@ export default function BeverageTrackerScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>
-              Select {variantModal.beverage.name} size
+              {t('selectSize')} - {variantModal.beverage.name}
             </Text>
             <View style={styles.variantButtonsContainer}>
               {variantModal.beverage.variants?.map((variant) => (
@@ -415,7 +413,9 @@ export default function BeverageTrackerScreen() {
               style={[styles.variantButton, styles.cancelVariantButton]}
               onPress={() => setVariantModal({ ...variantModal, visible: false })}
             >
-              <Text style={styles.variantButtonText}>Cancel</Text>
+              <Text style={styles.variantButtonText}>
+                {t('cancel')}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -424,20 +424,28 @@ export default function BeverageTrackerScreen() {
       {deleteConfirm.visible && (
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Delete Beverage?</Text>
-            <Text style={styles.modalDescription}>Are you sure you want to remove this beverage?</Text>
+            <Text style={styles.modalTitle}>
+              {t('deleteBeverage')}
+            </Text>
+            <Text style={styles.modalDescription}>
+              {t('deleteBeverageConfirm')}
+            </Text>
             <View style={styles.variantButtonsContainer}>
               <TouchableOpacity
                 style={[styles.variantButton, { backgroundColor: '#ff3b30' }]}
                 onPress={confirmDelete}
               >
-                <Text style={styles.variantButtonText}>Delete</Text>
+                <Text style={styles.variantButtonText}>
+                  {t('delete')}
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.variantButton, styles.cancelVariantButton]}
                 onPress={() => setDeleteConfirm({ visible: false, beverageId: '' })}
               >
-                <Text style={styles.variantButtonText}>Cancel</Text>
+                <Text style={styles.variantButtonText}>
+                  {t('cancel')}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>

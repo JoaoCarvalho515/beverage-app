@@ -27,7 +27,7 @@ const DEFAULT_BEVERAGES: Beverage[] = [
   { id: '1', name: 'Beer', image: 'pint.png', color: '#FDB913', variants: ['20cl', '33cl', 'Pint'] },
   { id: '2', name: 'Guinness', image: 'guinness.png', color: '#000000' },
   { id: '3', name: 'Wine', image: 'wine.png', color: '#8B2F3B', variants: ['Red', 'White', 'Rosé'] },
-  { id: '4', name: 'Sidra', image: 'cider.png', color: '#A0522D', variants: ['33cl', 'Pint'] },
+  { id: '4', name: 'Cidra', image: 'cider.png', color: '#A0522D' },
   { id: '5', name: 'Shots', image: 'shots.png', color: '#DC143C' },
   { id: '6', name: 'Cocktails', image: 'cocktails.png', color: '#FF69B4', variants: ['Rum and Coke', 'Gin Tonic', 'Others'] },
 ];
