@@ -3,7 +3,6 @@
     "version": ">= 16.28.0",
     "appVersionSource": "remote"
   },
-  "projectId": "beverage-app-temp",
   "build": {
     "development": {
       "developmentClient": true,
@@ -26,4 +25,5 @@
     "production": {}
   }
 }
+
 
