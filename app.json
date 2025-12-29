@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "beverage-app-temp",
+    "name": "Beverages Tracker",
     "slug": "beverage-app-temp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/icon2.png",
     "scheme": "beverageapptemp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
